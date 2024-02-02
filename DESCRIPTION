@@ -1,0 +1,22 @@
+Package: gtrendsAPI
+Title: Accessing the official Google Trends API
+Version: 1.0.0
+Authors@R: person("Ricardo", "Correia", email = "rahc85@gmail.com", role = c("aut","cre"),
+                  comment = c(ORCID = "YOUR-ORCID-ID"))
+Description: gTrendsAPI provides a platform to access data from
+  the official Google Trends API through R.
+Depends:
+  R (>= 3.4.0)
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.2.3
+Imports:
+    jsonlite (>= 1.5),
+    httr (>= 1.4.1),
+    lifecycle
+Suggests:
+  knitr,
+  rmarkdown
+VignetteBuilder: rmarkdown
+Roxygen: list(markdown = TRUE)
