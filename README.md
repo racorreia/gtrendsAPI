@@ -16,7 +16,7 @@ so:
 
 ``` r
 # install.packages("devtools")
-devtools::install_github("racorreia/gkgraphR", build_vignettes = T)
+devtools::install_github("racorreia/gtrendsAPI", build_vignettes = T)
 ```
 
 ## Example
