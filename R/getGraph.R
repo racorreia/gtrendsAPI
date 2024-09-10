@@ -2,10 +2,10 @@
 #'
 #' @param terms The search term(s) of interest. Up to five search terms can be queried simultaneously.
 #' @param geo Applies a geographical restriction to data query. Parameter should be a string, please refer to ISO-3166-2 for the supported values.
-#' @param property Defines the Google property to query data from. Options are images/news/froogle(Shopping)/youtube. Parameter should be a string, defaults to 'web' when empty.
-#' @param category Defines a category filter for data extraction. Please consult with the Trends Explore page for possible legal input here. Parameter should be a string, defaults to 'All Categories' when empty.
-#' @param startDate Defines the starting date for data extraction. Start date should be a month and a year in the format YYYY-MM e.g. 2010-01. Parameter should be a string, defaults to '2004-01'.
-#' @param endDate Defines the end date for data extraction. End date should be a month and a year in the format YYYY-MM e.g. 2010-01. Parameter should be a string, defaults to the current month and year.
+#' @param property Defines the Google property to query data from. Options are images/news/froogle(Shopping)/youtube. Parameter should be a string, defaults to 'web' when unspecified.
+#' @param category Defines a category filter for data extraction. Please consult with the Trends Explore page for possible legal input here. Parameter should be a string, defaults to 'All Categories' when unspecified.
+#' @param startDate Defines the starting date for data extraction. Start date should be a month and a year in the format YYYY-MM e.g. 2010-01. Parameter should be a string, defaults to '2004-01' when unspecified.
+#' @param endDate Defines the end date for data extraction. End date should be a month and a year in the format YYYY-MM e.g. 2010-01. Parameter should be a string, defaults to the current month and year when unspecified.
 #' @param api.key Google API access key.
 #'
 #' @return Returns a time series of Google Trends search volume.
@@ -71,7 +71,7 @@ getGraph <- function(terms, geo=NULL, property=NULL, category=NULL, startDate=NU
       stop("property must be in string format", call. = FALSE)
     }else{
       if(property %in% gtrendsAPI::properties == F){
-        stop("property must be one of \"images\", \"news\", \"froogle\" or \"youtube\". Defaults to \"web\".", call. = FALSE)
+        stop("property must be one of \"web\", \"images\", \"news\", \"froogle\" or \"youtube\". If unspecified, defaults to \"web\".", call. = FALSE)
       }else{
         link <- paste0(link, "&restrictions.property=", property)
       }
@@ -124,118 +124,127 @@ getGraph <- function(terms, geo=NULL, property=NULL, category=NULL, startDate=NU
   #GET call to extract data
   f <- httr::GET(link)
 
-  #Convert data to JSON format
-  d <- jsonlite::fromJSON(httr::content(f, as = "text"))
+  if(httr::http_error(f) == T){
 
-  res <- data.frame(value = integer(),
-                    date = character(),
-                    stringsAsFactors=FALSE)
-
-  #Arrange data table
-  if(length(d$lines$points)==1){
-
-    #Convert results to data.frame
-    res <- rbind(res, d$lines$points[[1]])
-
-    #Add geographical scope of search
-    if(is.null(geo) == T){
-      res$geo<-"world"
-    }else{
-      res$geo<-geo
-    }
-
-    #Add temporal coverage
-    if(is.null(startDate) == T & is.null(endDate) == T){
-      res$time<-paste0("2004-01 ", format(Sys.Date(), "%Y-%m"))
-    }
-
-    if(is.null(startDate) == T & is.null(endDate) == F){
-      res$time<-paste0("2004-01 ", endDate)
-    }
-
-    if(is.null(startDate) == F & is.null(endDate) == T){
-      res$time<-paste0(startDate, " ", format(Sys.Date(), "%Y-%m"))
-    }
-
-    if(is.null(startDate) == F & is.null(endDate) == F){
-      res$time<-paste0(startDate, " ", endDate)
-    }
-
-    #Add keyword
-    res$keyword<-terms
-
-    #Add property searched
-    if(is.null(property) == T){
-      res$gprop<-"web"
-    }else{
-      res$gprop<-property
-    }
-
-    #Add category filter
-    if(is.null(category) == T){
-      res$category<-"All categories"
-    }else{
-      res$category<-category
-    }
+    stop(paste0(jsonlite::fromJSON(httr::content(f, as = "text"))$error$code, " - ", jsonlite::fromJSON(httr::content(f, as = "text"))$error$message), call. = FALSE)
 
   }else{
 
-    #Compile results in data.frame
-    for(i in 1:length(d$lines$points)){
-      res <- rbind(res,d$lines$points[[i]])
-    }
+    #Convert data to JSON format
+    d <- jsonlite::fromJSON(httr::content(f, as = "text"))
 
-    #Add geographical scope of search
-    if(is.null(geo) == T){
-      res$geo<-"world"
-    }else{
-      res$geo<-geo
-    }
+    res <- data.frame(value = integer(),
+                      date = character(),
+                      stringsAsFactors=FALSE)
 
-    #Add temporal coverage
-    if(is.null(startDate) == T & is.null(endDate) == T){
-      res$time<-paste0("2004-01 ", format(Sys.Date(), "%Y-%m"))
-    }
+    #Arrange data table
+    if(length(d$lines$points)==1){
 
-    if(is.null(startDate) == T & is.null(endDate) == F){
-      res$time<-paste0("2004-01 ", endDate)
-    }
+      #Convert results to data.frame
+      res <- rbind(res, d$lines$points[[1]])
 
-    if(is.null(startDate) == F & is.null(endDate) == T){
-      res$time<-paste0(startDate, " ", format(Sys.Date(), "%Y-%m"))
-    }
-
-    if(is.null(startDate) == F & is.null(endDate) == F){
-      res$time<-paste0(startDate, " ", endDate)
-    }
-
-    #Add keyword
-    for(i in 1:length(d$lines$points)){
-      if(i == 1){
-        term.list<-rep(terms[i], nrow(d$lines$points[[i]]))
+      #Add geographical scope of search
+      if(is.null(geo) == T){
+        res$geo<-"world"
       }else{
-        term.list<-c(term.list, rep(terms[i], nrow(d$lines$points[[i]])))
+        res$geo<-geo
       }
-    }
-    res$keyword<-term.list
 
-    #Add property searched
-    if(is.null(property) == T){
-      res$gprop<-"web"
-    }else{
-      res$gprop<-property
-    }
+      #Add temporal coverage
+      if(is.null(startDate) == T & is.null(endDate) == T){
+        res$time<-paste0("2004-01 ", format(Sys.Date(), "%Y-%m"))
+      }
 
-    #Add category filter
-    if(is.null(category) == T){
-      res$category<-"All categories"
+      if(is.null(startDate) == T & is.null(endDate) == F){
+        res$time<-paste0("2004-01 ", endDate)
+      }
+
+      if(is.null(startDate) == F & is.null(endDate) == T){
+        res$time<-paste0(startDate, " ", format(Sys.Date(), "%Y-%m"))
+      }
+
+      if(is.null(startDate) == F & is.null(endDate) == F){
+        res$time<-paste0(startDate, " ", endDate)
+      }
+
+      #Add keyword
+      res$keyword<-terms
+
+      #Add property searched
+      if(is.null(property) == T){
+        res$gprop<-"web"
+      }else{
+        res$gprop<-property
+      }
+
+      #Add category filter
+      if(is.null(category) == T){
+        res$category<-"All categories"
+      }else{
+        res$category<-category
+      }
+
     }else{
-      res$category<-category
+
+      #Compile results in data.frame
+      for(i in 1:length(d$lines$points)){
+        res <- rbind(res,d$lines$points[[i]])
+      }
+
+      #Add geographical scope of search
+      if(is.null(geo) == T){
+        res$geo<-"world"
+      }else{
+        res$geo<-geo
+      }
+
+      #Add temporal coverage
+      if(is.null(startDate) == T & is.null(endDate) == T){
+        res$time<-paste0("2004-01 ", format(Sys.Date(), "%Y-%m"))
+      }
+
+      if(is.null(startDate) == T & is.null(endDate) == F){
+        res$time<-paste0("2004-01 ", endDate)
+      }
+
+      if(is.null(startDate) == F & is.null(endDate) == T){
+        res$time<-paste0(startDate, " ", format(Sys.Date(), "%Y-%m"))
+      }
+
+      if(is.null(startDate) == F & is.null(endDate) == F){
+        res$time<-paste0(startDate, " ", endDate)
+      }
+
+      #Add keyword
+      for(i in 1:length(d$lines$points)){
+        if(i == 1){
+          term.list<-rep(terms[i], nrow(d$lines$points[[i]]))
+        }else{
+          term.list<-c(term.list, rep(terms[i], nrow(d$lines$points[[i]])))
+        }
+      }
+      res$keyword<-term.list
+
+      #Add property searched
+      if(is.null(property) == T){
+        res$gprop<-"web"
+      }else{
+        res$gprop<-property
+      }
+
+      #Add category filter
+      if(is.null(category) == T){
+        res$category<-"All categories"
+      }else{
+        res$category<-category
+      }
+
     }
 
   }
 
   return(res)
+
 }
 
 

@@ -19,13 +19,13 @@ getTopTopics(
 
 \item{geo}{Applies a geographical restriction to data query. Parameter should be a string, please refer to ISO-3166-2 for the supported values.}
 
-\item{property}{Defines the Google property to query data from. Options are images/news/froogle(Shopping)/youtube. Parameter should be a string, defaults to 'web' when empty.}
+\item{property}{Defines the Google property to query data from. Options are images/news/froogle(Shopping)/youtube. Parameter should be a string, defaults to 'web' when unspecified.}
 
-\item{category}{Defines a category filter for data extraction. Please consult with the Trends Explore page for possible legal input here. Parameter should be a string, defaults to 'All Categories' when empty.}
+\item{category}{Defines a category filter for data extraction. Please consult with the Trends Explore page for possible legal input here. Parameter should be a string, defaults to 'All Categories' when unspecified.}
 
-\item{startDate}{Defines the starting date for data extraction. Start date should be a month and a year in the format YYYY-MM e.g. 2010-01. Parameter should be a string, defaults to '2004-01'.}
+\item{startDate}{Defines the starting date for data extraction. Start date should be a month and a year in the format YYYY-MM e.g. 2010-01. Parameter should be a string, defaults to '2004-01' when unspecified.}
 
-\item{endDate}{Defines the end date for data extraction. End date should be a month and a year in the format YYYY-MM e.g. 2010-01. Parameter should be a string, defaults to the current month and year.}
+\item{endDate}{Defines the end date for data extraction. End date should be a month and a year in the format YYYY-MM e.g. 2010-01. Parameter should be a string, defaults to the current month and year when unspecified.}
 
 \item{api.key}{Google API access key.}
 }

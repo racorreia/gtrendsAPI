@@ -2,10 +2,10 @@
 #'
 #' @param terms The search term of interest. Only a single term can be queried at a time.
 #' @param geo Applies a geographical restriction to data query. Parameter should be a string, please refer to ISO-3166-2 for the supported values.
-#' @param property Defines the Google property to query data from. Options are images/news/froogle(Shopping)/youtube. Parameter should be a string, defaults to 'web' when empty.
-#' @param category Defines a category filter for data extraction. Please consult with the Trends Explore page for possible legal input here. Parameter should be a string, defaults to 'All Categories' when empty.
-#' @param startDate Defines the starting date for data extraction. Start date should be a month and a year in the format YYYY-MM e.g. 2010-01. Parameter should be a string, defaults to '2004-01'.
-#' @param endDate Defines the end date for data extraction. End date should be a month and a year in the format YYYY-MM e.g. 2010-01. Parameter should be a string, defaults to the current month and year.
+#' @param property Defines the Google property to query data from. Options are images/news/froogle(Shopping)/youtube. Parameter should be a string, defaults to 'web' when unspecified.
+#' @param category Defines a category filter for data extraction. Please consult with the Trends Explore page for possible legal input here. Parameter should be a string, defaults to 'All Categories' when unspecified.
+#' @param startDate Defines the starting date for data extraction. Start date should be a month and a year in the format YYYY-MM e.g. 2010-01. Parameter should be a string, defaults to '2004-01' when unspecified.
+#' @param endDate Defines the end date for data extraction. End date should be a month and a year in the format YYYY-MM e.g. 2010-01. Parameter should be a string, defaults to the current month and year when unspecified.
 #' @param api.key Google API access key.
 #' @return Returns the top 25 queries associated with the provided search term or topic.
 #' @export
@@ -63,7 +63,7 @@ getTopQueries <- function(terms, geo=NULL, property=NULL, category=NULL, startDa
       stop("property must be in string format", call. = FALSE)
     }else{
       if(property %in% gtrendsAPI::properties == F){
-        stop("property must be one of \"images\", \"news\", \"froogle\" or \"youtube\". Defaults to \"web\".", call. = FALSE)
+        stop("property must be one of \"web\", \"images\", \"news\", \"froogle\" or \"youtube\". Defaults to \"web\".", call. = FALSE)
       }else{
         link <- paste0(link, "&restrictions.property=", property)
       }
@@ -116,66 +116,75 @@ getTopQueries <- function(terms, geo=NULL, property=NULL, category=NULL, startDa
   #GET call to extract data
   f <- httr::GET(link)
 
-  #Convert data to JSON format
-  d <- jsonlite::fromJSON(httr::content(f, as = "text"))
+  if(httr::http_error(f) == T){
 
-  #Arrange data table
-  res <- d$item
-
-  if(length(d)==0){
-
-    res<-data.frame(a=NA, b=NA)
-    names(res)<-c("topSearches", "value")
+    stop(paste0(jsonlite::fromJSON(httr::content(f, as = "text"))$error$code, " - ", jsonlite::fromJSON(httr::content(f, as = "text"))$error$message), call. = FALSE)
 
   }else{
 
-    #Change column names to match standard output
-    names(res)<-c("topSearches", "value")
+    #Convert data to JSON format
+    d <- jsonlite::fromJSON(httr::content(f, as = "text"))
 
-  }
+    #Arrange data table
+    res <- d$item
 
-  #Add geographical scope of search
-  if(is.null(geo) == T){
-    res$geo<-"world"
-  }else{
-    res$geo<-geo
-  }
+    if(length(d)==0){
 
-  #Add temporal coverage
-  if(is.null(startDate) == T & is.null(endDate) == T){
-    res$time<-paste0("2004-01 ", format(Sys.Date(), "%Y-%m"))
-  }
+      res<-data.frame(a=NA, b=NA)
+      names(res)<-c("topSearches", "value")
 
-  if(is.null(startDate) == T & is.null(endDate) == F){
-    res$time<-paste0("2004-01 ", endDate)
-  }
+    }else{
 
-  if(is.null(startDate) == F & is.null(endDate) == T){
-    res$time<-paste0(startDate, " ", format(Sys.Date(), "%Y-%m"))
-  }
+      #Change column names to match standard output
+      names(res)<-c("topSearches", "value")
 
-  if(is.null(startDate) == F & is.null(endDate) == F){
-    res$time<-paste0(startDate, " ", endDate)
-  }
+    }
 
-  #Add keyword
-  res$keyword<-terms
+    #Add geographical scope of search
+    if(is.null(geo) == T){
+      res$geo<-"world"
+    }else{
+      res$geo<-geo
+    }
 
-  #Add property searched
-  if(is.null(property) == T){
-    res$gprop<-"web"
-  }else{
-    res$gprop<-property
-  }
+    #Add temporal coverage
+    if(is.null(startDate) == T & is.null(endDate) == T){
+      res$time<-paste0("2004-01 ", format(Sys.Date(), "%Y-%m"))
+    }
 
-  #Add category filter
-  if(is.null(category) == T){
-    res$category<-"All categories"
-  }else{
-    res$category<-category
+    if(is.null(startDate) == T & is.null(endDate) == F){
+      res$time<-paste0("2004-01 ", endDate)
+    }
+
+    if(is.null(startDate) == F & is.null(endDate) == T){
+      res$time<-paste0(startDate, " ", format(Sys.Date(), "%Y-%m"))
+    }
+
+    if(is.null(startDate) == F & is.null(endDate) == F){
+      res$time<-paste0(startDate, " ", endDate)
+    }
+
+    #Add keyword
+    res$keyword<-terms
+
+    #Add property searched
+    if(is.null(property) == T){
+      res$gprop<-"web"
+    }else{
+      res$gprop<-property
+    }
+
+    #Add category filter
+    if(is.null(category) == T){
+      res$category<-"All categories"
+    }else{
+      res$category<-category
+    }
+
   }
 
   return(res)
+
 }
 
 
